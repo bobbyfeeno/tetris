@@ -7,7 +7,7 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background: #0a0a0a;
+  background: #020a14;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -15,7 +15,17 @@ body {
   font-family: 'Courier New', monospace;
   color: #fff;
   overflow: hidden;
+  position: relative;
 }
+/* === PANDORA BACKGROUND === */
+#pandora-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.game-wrapper, #start-screen, #game-over { position: relative; z-index: 2; }
 .game-wrapper {
   display: flex;
   gap: 24px;
@@ -28,11 +38,12 @@ body {
   min-width: 120px;
 }
 .panel-box {
-  background: #111;
-  border: 2px solid #333;
+  background: rgba(5, 15, 30, 0.85);
+  border: 2px solid rgba(0, 200, 255, 0.3);
   border-radius: 8px;
   padding: 12px;
   text-align: center;
+  box-shadow: 0 0 12px rgba(0, 180, 255, 0.1);
 }
 .panel-box h3 {
   font-size: 11px;
@@ -51,9 +62,10 @@ body {
   margin: 0 auto;
 }
 canvas#game {
-  border: 2px solid #333;
+  border: 2px solid rgba(0, 200, 255, 0.3);
   border-radius: 4px;
-  background: #111;
+  background: rgba(5, 10, 25, 0.8);
+  box-shadow: 0 0 20px rgba(0, 180, 255, 0.15), inset 0 0 40px rgba(0, 100, 200, 0.05);
 }
 .controls {
   font-size: 11px;
@@ -96,22 +108,30 @@ canvas#game {
 }
 #start-screen h1 {
   font-size: 48px;
-  background: linear-gradient(90deg, #f44, #f90, #ff0, #0f0, #09f, #90f);
+  background: linear-gradient(90deg, #00e5ff, #00ff87, #b388ff, #00e5ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 16px;
+  text-shadow: 0 0 40px rgba(0, 200, 255, 0.5);
+  animation: titleGlow 3s ease-in-out infinite;
+}
+@keyframes titleGlow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
 }
 #start-screen button {
-  background: #333;
-  color: #fff;
-  border: 2px solid #555;
+  background: rgba(0, 180, 255, 0.15);
+  color: #00e5ff;
+  border: 2px solid rgba(0, 200, 255, 0.5);
   padding: 12px 36px;
   font-size: 18px;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
+  text-shadow: 0 0 8px rgba(0, 200, 255, 0.5);
+  transition: all 0.3s;
 }
-#start-screen button:hover { background: #444; border-color: #888; }
+#start-screen button:hover { background: rgba(0, 180, 255, 0.3); border-color: #00e5ff; box-shadow: 0 0 20px rgba(0, 200, 255, 0.3); }
 .mobile-controls {
   display: none;
   justify-content: center;
@@ -137,6 +157,8 @@ canvas#game {
 </style>
 </head>
 <body>
+
+<canvas id="pandora-bg"></canvas>
 
 <div id="start-screen">
   <h1>TETRIS</h1>
@@ -182,6 +204,195 @@ canvas#game {
     </div>
   </div>
 </div>
+
+<script>
+// === PANDORA BACKGROUND ===
+(function() {
+  const bg = document.getElementById('pandora-bg');
+  const bc = bg.getContext('2d');
+  let W, H;
+  function resize() { W = bg.width = window.innerWidth; H = bg.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Floating particles (bioluminescent spores)
+  const particles = [];
+  for (let i = 0; i < 120; i++) {
+    particles.push({
+      x: Math.random() * 2000, y: Math.random() * 1200,
+      r: Math.random() * 3 + 1,
+      dx: (Math.random() - 0.5) * 0.4,
+      dy: -Math.random() * 0.5 - 0.1,
+      hue: Math.random() > 0.5 ? 180 + Math.random() * 40 : 270 + Math.random() * 40,
+      alpha: Math.random() * 0.6 + 0.2,
+      pulse: Math.random() * Math.PI * 2
+    });
+  }
+
+  // Bioluminescent plants
+  const plants = [];
+  for (let i = 0; i < 18; i++) {
+    plants.push({
+      x: Math.random() * 2000,
+      h: Math.random() * 200 + 80,
+      sway: Math.random() * Math.PI * 2,
+      hue: [180, 200, 260, 280, 300][Math.floor(Math.random() * 5)],
+      width: Math.random() * 3 + 1
+    });
+  }
+
+  // Glowing mushrooms
+  const shrooms = [];
+  for (let i = 0; i < 8; i++) {
+    shrooms.push({
+      x: Math.random() * 2000,
+      size: Math.random() * 30 + 15,
+      hue: Math.random() > 0.5 ? 180 : 280,
+      pulse: Math.random() * Math.PI * 2
+    });
+  }
+
+  let t = 0;
+  function drawPandora() {
+    t += 0.008;
+    bc.clearRect(0, 0, W, H);
+
+    // Sky gradient - deep alien night
+    const sky = bc.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#020818');
+    sky.addColorStop(0.3, '#041230');
+    sky.addColorStop(0.6, '#061a3a');
+    sky.addColorStop(0.85, '#0a2844');
+    sky.addColorStop(1, '#0d3050');
+    bc.fillStyle = sky;
+    bc.fillRect(0, 0, W, H);
+
+    // Stars
+    bc.fillStyle = '#fff';
+    for (let i = 0; i < 80; i++) {
+      const sx = (i * 137.5 + i * i * 3.7) % W;
+      const sy = (i * 89.3 + i * 7.1) % (H * 0.5);
+      const sa = 0.3 + 0.4 * Math.sin(t * 2 + i);
+      bc.globalAlpha = sa;
+      bc.beginPath();
+      bc.arc(sx, sy, 0.8, 0, Math.PI * 2);
+      bc.fill();
+    }
+    bc.globalAlpha = 1;
+
+    // Giant planet/moon in sky
+    const moonX = W * 0.75, moonY = H * 0.18, moonR = 60;
+    const moonGrad = bc.createRadialGradient(moonX - 10, moonY - 10, moonR * 0.1, moonX, moonY, moonR);
+    moonGrad.addColorStop(0, 'rgba(150, 200, 255, 0.3)');
+    moonGrad.addColorStop(0.5, 'rgba(80, 140, 220, 0.15)');
+    moonGrad.addColorStop(1, 'rgba(40, 80, 160, 0)');
+    bc.fillStyle = moonGrad;
+    bc.beginPath();
+    bc.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+    bc.fill();
+    // moon glow
+    const moonGlow = bc.createRadialGradient(moonX, moonY, moonR, moonX, moonY, moonR * 3);
+    moonGlow.addColorStop(0, 'rgba(100, 180, 255, 0.06)');
+    moonGlow.addColorStop(1, 'rgba(100, 180, 255, 0)');
+    bc.fillStyle = moonGlow;
+    bc.beginPath();
+    bc.arc(moonX, moonY, moonR * 3, 0, Math.PI * 2);
+    bc.fill();
+
+    // Mountain silhouettes
+    bc.fillStyle = '#060e1a';
+    bc.beginPath();
+    bc.moveTo(0, H);
+    bc.lineTo(0, H * 0.55);
+    bc.lineTo(W * 0.1, H * 0.45);
+    bc.lineTo(W * 0.2, H * 0.55);
+    bc.lineTo(W * 0.3, H * 0.4);
+    bc.lineTo(W * 0.45, H * 0.52);
+    bc.lineTo(W * 0.55, H * 0.38);
+    bc.lineTo(W * 0.7, H * 0.5);
+    bc.lineTo(W * 0.8, H * 0.42);
+    bc.lineTo(W * 0.9, H * 0.48);
+    bc.lineTo(W, H * 0.5);
+    bc.lineTo(W, H);
+    bc.fill();
+
+    // Ground
+    const ground = bc.createLinearGradient(0, H * 0.7, 0, H);
+    ground.addColorStop(0, '#081820');
+    ground.addColorStop(1, '#0a2018');
+    bc.fillStyle = ground;
+    bc.fillRect(0, H * 0.7, W, H * 0.3);
+
+    // Bioluminescent plants
+    for (const p of plants) {
+      const sway = Math.sin(t + p.sway) * 15;
+      const baseX = p.x % W;
+      const baseY = H;
+      bc.strokeStyle = `hsla(${p.hue}, 100%, 60%, 0.4)`;
+      bc.lineWidth = p.width;
+      bc.shadowColor = `hsla(${p.hue}, 100%, 60%, 0.6)`;
+      bc.shadowBlur = 15;
+      bc.beginPath();
+      bc.moveTo(baseX, baseY);
+      bc.quadraticCurveTo(baseX + sway, baseY - p.h * 0.6, baseX + sway * 1.5, baseY - p.h);
+      bc.stroke();
+      // tip glow
+      bc.fillStyle = `hsla(${p.hue}, 100%, 70%, ${0.4 + 0.3 * Math.sin(t * 2 + p.sway)})`;
+      bc.beginPath();
+      bc.arc(baseX + sway * 1.5, baseY - p.h, 4, 0, Math.PI * 2);
+      bc.fill();
+      bc.shadowBlur = 0;
+    }
+
+    // Glowing mushrooms
+    for (const s of shrooms) {
+      const sx = s.x % W;
+      const sy = H - 20;
+      const glow = 0.3 + 0.2 * Math.sin(t * 1.5 + s.pulse);
+      // stem
+      bc.fillStyle = `hsla(${s.hue}, 60%, 25%, 0.6)`;
+      bc.fillRect(sx - 2, sy - s.size * 0.6, 4, s.size * 0.6);
+      // cap
+      bc.fillStyle = `hsla(${s.hue}, 100%, 55%, ${glow})`;
+      bc.shadowColor = `hsla(${s.hue}, 100%, 60%, 0.8)`;
+      bc.shadowBlur = 20;
+      bc.beginPath();
+      bc.ellipse(sx, sy - s.size * 0.6, s.size * 0.5, s.size * 0.3, 0, Math.PI, 0);
+      bc.fill();
+      bc.shadowBlur = 0;
+    }
+
+    // Floating spores/particles
+    for (const p of particles) {
+      p.x += p.dx;
+      p.y += p.dy;
+      p.pulse += 0.02;
+      if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+      if (p.x < -10) p.x = W + 10;
+      if (p.x > W + 10) p.x = -10;
+      const a = p.alpha * (0.5 + 0.5 * Math.sin(p.pulse));
+      bc.fillStyle = `hsla(${p.hue}, 100%, 70%, ${a})`;
+      bc.shadowColor = `hsla(${p.hue}, 100%, 70%, ${a})`;
+      bc.shadowBlur = 10;
+      bc.beginPath();
+      bc.arc(p.x % W, p.y, p.r, 0, Math.PI * 2);
+      bc.fill();
+      bc.shadowBlur = 0;
+    }
+
+    // Subtle fog layer
+    const fog = bc.createLinearGradient(0, H * 0.6, 0, H * 0.8);
+    fog.addColorStop(0, 'rgba(0, 80, 120, 0)');
+    fog.addColorStop(0.5, `rgba(0, 100, 150, ${0.04 + 0.02 * Math.sin(t)})`);
+    fog.addColorStop(1, 'rgba(0, 80, 120, 0)');
+    bc.fillStyle = fog;
+    bc.fillRect(0, H * 0.6, W, H * 0.2);
+
+    requestAnimationFrame(drawPandora);
+  }
+  drawPandora();
+})();
+</script>
 
 <script>
 const COLS = 10, ROWS = 20, BLOCK = 30;
